@@ -76,7 +76,6 @@
             flex-shrink: 0;
         }
 
-        /* תיקון עימוד האימוג'י בתוך הכפתור */
         .btn-link {
             background-color: var(--primary-blue);
             color: white;
@@ -88,17 +87,15 @@
             font-weight: 600;
             transition: all 0.2s;
             box-shadow: 0 4px 6px rgba(59, 130, 246, 0.15);
-            
-            /* הגדרות Flex ליישור אימוג'י */
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px; /* רווח בין האימוג'י לטקסט */
+            gap: 8px;
             line-height: 1;
         }
 
         .btn-link span.icon {
-            font-size: 1.1rem; /* האימוג'י מעט גדול יותר מהטקסט למראה מאוזן */
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
         }
@@ -124,30 +121,24 @@
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3CbYUVUDzXq2mZ1eZ0u1VQPJuZ7tUj3cGjYad9WDHq5ezf5kveHHQ2UrAcKWlV-7dJsgKM35tsud7/pub?gid=0&single=true&output=csv';
     const CACHE_BUSTER = `&t=${new Date().getTime()}`;
 
-    
+    // פונקציית המרה לקישור גולמי (Raw PDF)
     function formatDriveLink(url) {
-    if (url.includes('drive.google.com')) {
-        // שליפת ה-ID מכל סוג של קישור שיתוף
-        const fileIdMatch = url.match(/\/d\/([^/]+)/) || url.match(/id=([^&]+)/);
-        if (fileIdMatch && fileIdMatch[1]) {
-            // שימוש בפורמט /file/d/ID/preview שמבטיח פתיחה בתוך הדפדפן
-            return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+        if (url.includes('drive.google.com')) {
+            const fileIdMatch = url.match(/\/d\/([^/]+)/) || url.match(/id=([^&]+)/);
+            if (fileIdMatch && fileIdMatch[1]) {
+                // המרה לפורמט הישיר ביותר של גוגל לפתיחה בדפדפן
+                return `https://drive.google.com/uc?id=${fileIdMatch[1]}&preview=true`;
+            }
         }
+        return url;
     }
-    return url;
-}
 
     function getFileIcon(url, buttonText) {
         const lowerText = buttonText.toLowerCase();
         const lowerUrl = url.toLowerCase();
-
-        if (lowerText.includes('מבחן') || lowerText.includes('חומר') || lowerText.includes('דף') || lowerText.includes('קובץ')) return '📄';
+        if (lowerText.includes('מבחן') || lowerText.includes('חומר') || lowerText.includes('דף')) return '📄';
         if (lowerText.includes('מצגת') || lowerText.includes('צפה')) return '🖼️';
-        if (lowerText.includes('פרטים') || lowerText.includes('מידע') || lowerText.includes('נושאים')) return 'i️';
-        
-        if (lowerUrl.endsWith('.pdf')) return '📄';
-        if (lowerUrl.match(/\.(jpg|jpeg|png|gif|webp)$/)) return '🖼️';
-        
+        if (lowerText.includes('פרטים')) return 'i️';
         return lowerUrl.includes('drive.google.com') ? '📂' : '🔗';
     }
 
@@ -169,13 +160,11 @@
                     let link = columns[2] || '';
                     let buttonText = (columns[3] && columns[3] !== "") ? columns[3] : "חומר";
 
-                    const hasLink = link.toLowerCase().startsWith('http');
-                    
-                    if (hasLink) {
+                    if (link.toLowerCase().startsWith('http')) {
                         link = formatDriveLink(link);
                         const icon = getFileIcon(link, buttonText);
                         
-                        const eventHtml = `
+                        listContainer.innerHTML += `
                             <div class="event-item">
                                 <span class="date">${date}</span>
                                 <span class="title">${title}</span>
@@ -187,7 +176,6 @@
                                 </div>
                             </div>
                         `;
-                        listContainer.innerHTML += eventHtml;
                     } else {
                         listContainer.innerHTML += `
                             <div class="event-item">
