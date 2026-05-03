@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>אירועים קרובים ג'1</title>
     <style>
+        :root {
+            --primary-blue: #3b82f6;
+            --text-main: #1e293b;
+            --text-sub: #475569;
+            --bg-color: #f8fafc;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f4f8;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
             display: flex;
             justify-content: center;
             padding: 20px;
@@ -18,69 +25,90 @@
             background-color: #ffffff;
             width: 100%;
             max-width: 500px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
             padding: 30px;
         }
 
         h1 {
             text-align: center;
-            color: #334155;
-            font-size: 2rem;
-            margin-bottom: 30px;
+            color: var(--text-main);
+            font-size: 2.2rem;
+            margin-bottom: 35px;
+            font-weight: 800;
         }
 
         .event-list {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .event-item {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 15px;
-            border-radius: 12px;
-            background-color: #fff;
+            padding: 16px;
+            border-radius: 16px;
+            transition: background-color 0.2s;
             border-bottom: 1px solid #f1f5f9;
         }
 
+        /* עימוד העמודות */
         .date {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #1e293b;
-            min-width: 90px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            width: 100px; /* רוחב קבוע לתאריך */
+            flex-shrink: 0;
         }
 
         .title {
             flex-grow: 1;
-            font-size: 1.1rem;
-            color: #475569;
+            font-size: 1.15rem;
+            color: var(--text-sub);
+            padding: 0 15px;
             text-align: right;
-            padding-right: 10px;
+        }
+
+        /* עיצוב כפתור אחיד ודינמי */
+        .btn-container {
+            width: 110px; /* רוחב קבוע למכולת הכפתור כדי שהכל יהיה מיושר */
+            display: flex;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         .btn-link {
-            background-color: #3b82f6;
+            background-color: var(--primary-blue);
             color: white;
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.85rem;
+            width: 100%; /* הכפתור ימלא את כל ה-110px */
+            text-align: center;
+            padding: 10px 0;
+            border-radius: 10px;
+            font-size: 0.9rem;
             font-weight: 600;
-            transition: background-color 0.2s;
-            white-space: nowrap;
+            transition: transform 0.1s, background-color 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
         }
 
         .btn-link:hover {
             background-color: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-link:active {
+            transform: translateY(0);
+        }
+
+        .empty-space {
+            width: 110px; /* שומר על המקום גם כשאין כפתור */
         }
 
         .loading {
             text-align: center;
-            color: #64748b;
-            font-style: italic;
+            color: #94a3b8;
+            padding: 20px;
         }
     </style>
 </head>
@@ -88,20 +116,17 @@
 
 <div class="container">
     <h1>אירועים קרובים ג'1</h1>
-    <div id="loader" class="loading">טוען נתונים מהגיליון...</div>
+    <div id="loader" class="loading">טוען נתונים...</div>
     <div class="event-list" id="event-list"></div>
 </div>
 
 <script>
-    // הדבק כאן את קישור ה-CSV שלך
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3CbYUVUDzXq2mZ1eZ0u1VQPJuZ7tUj3cGjYad9WDHq5ezf5kveHHQ2UrAcKWlV-7dJsgKM35tsud7/pub?gid=0&single=true&output=csv';
 
     async function fetchEvents() {
         try {
             const response = await fetch(SHEET_CSV_URL);
             const data = await response.text();
-            
-            // פיצול שורות תוך התחשבות בתווי סוף שורה שונים
             const rows = data.split(/\r?\n/).slice(1); 
             const listContainer = document.getElementById('event-list');
             const loader = document.getElementById('loader');
@@ -110,30 +135,29 @@
             loader.style.display = 'none';
 
             rows.forEach(row => {
-                // שימוש בביטוי רגולרי כדי לפצל פסיקים בצורה בטוחה
                 const columns = row.split(',');
-                
                 if (columns.length >= 2 && columns[0].trim() !== "") {
                     const date = columns[0].trim();
                     const title = columns[1].trim();
                     const link = columns[2] ? columns[2].trim() : '';
-                    const buttonText = columns[3] ? columns[3].trim() : 'חומר';
+                    const buttonText = (columns[3] && columns[3].trim() !== "") ? columns[3].trim() : 'חומר';
+
+                    const hasLink = link && link.toLowerCase().startsWith('http');
 
                     const eventHtml = `
                         <div class="event-item">
                             <span class="date">${date}</span>
                             <span class="title">${title}</span>
-                            ${link && link !== '#' && link.startsWith('http') ? 
-                                `<a href="${link}" target="_blank" class="btn-link">${buttonText}</a>` : 
-                                ''}
+                            <div class="btn-container">
+                                ${hasLink ? `<a href="${link}" target="_blank" class="btn-link">${buttonText}</a>` : '<div class="empty-space"></div>'}
+                            </div>
                         </div>
                     `;
                     listContainer.innerHTML += eventHtml;
                 }
             });
         } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('loader').innerText = 'שגיאה בטעינת הנתונים.';
+            loader.innerText = 'שגיאה בטעינה. בדוק את חיבור האינטרנט או הקישור.';
         }
     }
 
