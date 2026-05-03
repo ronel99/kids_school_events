@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>אירועים קרובים ג'1</title>
     <style>
         :root {
@@ -10,6 +11,7 @@
             --text-main: #1e293b;
             --text-sub: #475569;
             --bg-color: #f8fafc;
+            --card-bg: #ffffff;
         }
 
         body {
@@ -22,7 +24,7 @@
         }
 
         .container {
-            background-color: #ffffff;
+            background-color: var(--card-bg);
             width: 100%;
             max-width: 500px;
             border-radius: 24px;
@@ -41,7 +43,7 @@
         .event-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
 
         .event-item {
@@ -49,32 +51,36 @@
             align-items: center;
             padding: 16px;
             border-radius: 16px;
-            transition: background-color 0.2s;
             border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s;
         }
 
-        /* עימוד העמודות */
+        .event-item:hover {
+            background-color: #fcfdfe;
+        }
+
+        /* עימוד עמודות */
         .date {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: var(--text-main);
-            width: 100px; /* רוחב קבוע לתאריך */
+            width: 100px; /* רוחב קבוע לתאריך ליישור מושלם */
             flex-shrink: 0;
         }
 
         .title {
             flex-grow: 1;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             color: var(--text-sub);
             padding: 0 15px;
             text-align: right;
         }
 
-        /* עיצוב כפתור אחיד ודינמי */
+        /* מכולת כפתור בגודל קבוע */
         .btn-container {
-            width: 110px; /* רוחב קבוע למכולת הכפתור כדי שהכל יהיה מיושר */
+            width: 110px; 
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             flex-shrink: 0;
         }
 
@@ -82,33 +88,38 @@
             background-color: var(--primary-blue);
             color: white;
             text-decoration: none;
-            width: 100%; /* הכפתור ימלא את כל ה-110px */
+            width: 100%;
             text-align: center;
-            padding: 10px 0;
+            padding: 9px 0;
             border-radius: 10px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
-            transition: transform 0.1s, background-color 0.2s;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.15);
+            display: block;
         }
 
         .btn-link:hover {
             background-color: #2563eb;
             transform: translateY(-1px);
-        }
-
-        .btn-link:active {
-            transform: translateY(0);
+            box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.25);
         }
 
         .empty-space {
-            width: 110px; /* שומר על המקום גם כשאין כפתור */
+            width: 110px;
         }
 
         .loading {
             text-align: center;
             color: #94a3b8;
             padding: 20px;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 400px) {
+            .date { width: 80px; font-size: 1rem; }
+            .title { font-size: 1rem; }
+            .btn-container { width: 90px; }
         }
     </style>
 </head>
@@ -116,18 +127,24 @@
 
 <div class="container">
     <h1>אירועים קרובים ג'1</h1>
-    <div id="loader" class="loading">טוען נתונים...</div>
+    <div id="loader" class="loading">טוען נתונים מעודכנים...</div>
     <div class="event-list" id="event-list"></div>
 </div>
 
 <script>
+    // החלף בקישור ה-CSV שלך
     const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3CbYUVUDzXq2mZ1eZ0u1VQPJuZ7tUj3cGjYad9WDHq5ezf5kveHHQ2UrAcKWlV-7dJsgKM35tsud7/pub?gid=0&single=true&output=csv';
+    
+    // הוספת Timestamp כדי למנוע טעינה מהזיכרון הישן (Cache)
+    const CACHE_BUSTER = `&t=${new Date().getTime()}`;
 
     async function fetchEvents() {
         try {
-            const response = await fetch(SHEET_CSV_URL);
+            const response = await fetch(SHEET_CSV_URL + CACHE_BUSTER);
             const data = await response.text();
-            const rows = data.split(/\r?\n/).slice(1); 
+            
+            // עיבוד השורות: ניקוי רווחים והתעלמות משורות ריקות
+            const rows = data.split(/\r?\n/).filter(row => row.trim() !== "").slice(1); 
             const listContainer = document.getElementById('event-list');
             const loader = document.getElementById('loader');
             
@@ -135,21 +152,27 @@
             loader.style.display = 'none';
 
             rows.forEach(row => {
-                const columns = row.split(',');
-                if (columns.length >= 2 && columns[0].trim() !== "") {
-                    const date = columns[0].trim();
-                    const title = columns[1].trim();
-                    const link = columns[2] ? columns[2].trim() : '';
-                    const buttonText = (columns[3] && columns[3].trim() !== "") ? columns[3].trim() : 'חומר';
+                // פיצול לפי פסיק וניקוי רווחים מכל תא
+                const columns = row.split(',').map(col => col.trim());
+                
+                if (columns.length >= 2) {
+                    const date = columns[0];
+                    const title = columns[1];
+                    const link = columns[2] || '';
+                    
+                    // בדיקה אם קיים טקסט לכפתור בעמודה D, אחרת ברירת מחדל
+                    const buttonText = (columns[3] && columns[3] !== "") ? columns[3] : "חומר למטלה";
 
-                    const hasLink = link && link.toLowerCase().startsWith('http');
+                    const hasLink = link.toLowerCase().startsWith('http');
 
                     const eventHtml = `
                         <div class="event-item">
                             <span class="date">${date}</span>
                             <span class="title">${title}</span>
                             <div class="btn-container">
-                                ${hasLink ? `<a href="${link}" target="_blank" class="btn-link">${buttonText}</a>` : '<div class="empty-space"></div>'}
+                                ${hasLink ? 
+                                    `<a href="${link}" target="_blank" class="btn-link">${buttonText}</a>` : 
+                                    '<div class="empty-space"></div>'}
                             </div>
                         </div>
                     `;
@@ -157,10 +180,12 @@
                 }
             });
         } catch (error) {
-            loader.innerText = 'שגיאה בטעינה. בדוק את חיבור האינטרנט או הקישור.';
+            console.error("Fetch error:", error);
+            document.getElementById('loader').innerText = 'שגיאה בטעינה. וודא שהגיליון מפורסם כ-CSV.';
         }
     }
 
+    // הפעלה
     fetchEvents();
 </script>
 
