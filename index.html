@@ -119,13 +119,15 @@
             box-sizing: border-box;
         }
 
-        .btn-edit {
-            background-color: #f1f5f9;
-            color: var(--text-sub);
-            width: 100%;
-            margin-top: 10px;
-            border: 1px solid #e2e8f0;
-        }
+.btn-edit {
+    background-color: #f1f5f9;
+    color: var(--text-sub);
+    width: 100%;
+    margin-top: 10px;
+    border: 1px solid #e2e8f0;
+    box-sizing: border-box; /* מכריח את הפאדינג להיכנס בתוך ה-100% */
+    display: flex; /* מיישר את האלמנט בצורה אחידה בתוך הקונטיינר */
+}
 
         .loading { text-align: center; color: #94a3b8; padding: 20px; }
 
