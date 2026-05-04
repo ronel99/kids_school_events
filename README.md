@@ -1,4 +1,4 @@
-# kids_school_eitan
+# kids_school_events
 
 ### how to use
 
